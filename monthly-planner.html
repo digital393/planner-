@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المخطط الشهري الرقمي</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal: #5f9ea0; --teal-dark: #4a7f80; --teal-light: #d4e9e9;
+    --cream: #f5f0eb; --cream-dark: #e8e0d6;
+    --text: #2c2c2c; --text-light: #6b6b6b;
+    --white: #ffffff; --red: #e74c3c; --red-light: #fde8e8;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08); --radius: 16px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Tajawal',sans-serif; background:var(--cream); color:var(--text); min-height:100vh; }
+
+  nav { background:var(--teal); padding:0 24px; display:flex; align-items:center; justify-content:space-between; height:56px; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,0.15); }
+  nav h1 { font-family:'Playfair Display',serif; color:white; font-size:1.2rem; }
+  .nav-month { color:white; font-size:0.9rem; opacity:0.9; }
+  .nav-arrows { display:flex; gap:8px; }
+  .nav-btn { background:rgba(255,255,255,0.2); border:none; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; }
+  .nav-btn:hover { background:rgba(255,255,255,0.35); }
+
+  .section { display:none; padding:20px 16px 100px; }
+  .section.active { display:block; }
+
+  .month-header { background:var(--teal); border-radius:var(--radius); padding:24px 20px 20px; margin-bottom:20px; color:white; text-align:center; }
+  .month-header h2 { font-family:'Playfair Display',serif; font-size:2rem; letter-spacing:2px; }
+  .month-header p { opacity:0.8; font-size:0.85rem; margin-top:4px; }
+
+  .cards-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .card { background:white; border-radius:var(--radius); padding:18px 14px; box-shadow:var(--shadow); cursor:pointer; transition:transform 0.2s; text-align:center; border:2px solid transparent; }
+  .card:hover { transform:translateY(-3px); }
+  .card-icon { font-size:2rem; margin-bottom:8px; }
+  .card-title { font-size:0.85rem; font-weight:700; }
+  .card-sub { font-size:0.72rem; color:var(--text-light); margin-top:3px; }
+
+  .calendar-grid { background:white; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); margin-bottom:16px; }
+  .cal-header { background:var(--teal); display:grid; grid-template-columns:repeat(7,1fr); text-align:center; padding:10px 0; }
+  .cal-header span { color:white; font-size:0.72rem; font-weight:700; }
+  .cal-days { display:grid; grid-template-columns:repeat(7,1fr); padding:8px; gap:4px; }
+  .cal-day { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:0.8rem; border-radius:50%; cursor:pointer; transition:background 0.15s; }
+  .cal-day:hover { background:var(--teal-light); }
+  .cal-day.today { background:var(--teal); color:white; font-weight:700; }
+  .cal-day.empty { cursor:default; }
+
+  .section-label { font-size:0.75rem; font-weight:700; letter-spacing:1.5px; color:var(--teal-dark); margin-bottom:10px; padding-right:4px; }
+
+  .goal-item { background:white; border-radius:12px; padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow); }
+  .goal-check { width:22px; height:22px; border:2px solid var(--teal); border-radius:50%; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.75rem; color:white; transition:background 0.2s; }
+  .goal-check.checked { background:var(--teal); }
+  .goal-text { flex:1; font-size:0.88rem; }
+  .goal-text.done { text-decoration:line-through; color:var(--text-light); }
+
+  .add-btn { width:100%; padding:11px; border:2px dashed var(--teal-light); border-radius:12px; background:transparent; color:var(--teal); font-family:'Tajawal',sans-serif; font-size:0.88rem; cursor:pointer; transition:all 0.2s; margin-top:4px; }
+  .add-btn:hover { border-color:var(--teal); background:var(--teal-light); }
+
+  .del-btn { background:var(--red-light); color:var(--red); border:none; border-radius:8px; padding:4px 8px; font-size:0.75rem; cursor:pointer; flex-shrink:0; font-family:'Tajawal',sans-serif; }
+  .del-btn:hover { background:var(--red); color:white; }
+  .edit-btn { background:var(--teal-light); color:var(--teal-dark); border:none; border-radius:8px; padding:4px 8px; font-size:0.75rem; cursor:pointer; flex-shrink:0; font-family:'Tajawal',sans-serif; font-weight:700; }
+  .edit-btn:hover { background:var(--teal); color:white; }
+
+  .habit-row { background:white; border-radius:12px; padding:12px 14px; margin-bottom:8px; box-shadow:var(--shadow); }
+  .habit-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .habit-name { font-size:0.85rem; font-weight:600; }
+  .habit-dots { display:flex; gap:5px; flex-wrap:wrap; }
+  .dot { width:26px; height:26px; border-radius:50%; border:2px solid var(--teal-light); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.6rem; color:var(--text-light); transition:all 0.15s; flex-shrink:0; }
+  .dot.filled { background:var(--teal); border-color:var(--teal); color:white; }
+
+  .budget-bar-wrap { background:white; border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); margin-bottom:16px; }
+  .budget-labels { display:flex; justify-content:space-between; margin-bottom:8px; }
+  .budget-labels span { font-size:0.8rem; }
+  .budget-labels .amount { font-weight:700; color:var(--teal-dark); }
+  .bar-bg { background:var(--cream-dark); border-radius:99px; height:10px; overflow:hidden; }
+  .bar-fill { height:100%; background:linear-gradient(90deg,var(--teal),var(--teal-dark)); border-radius:99px; transition:width 0.6s ease; }
+
+  .expense-item { background:white; border-radius:12px; padding:12px 16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow); gap:8px; }
+  .expense-name { font-size:0.88rem; }
+  .expense-cat { font-size:0.72rem; color:var(--text-light); }
+  .expense-amt { font-weight:700; color:var(--teal-dark); font-size:0.95rem; white-space:nowrap; }
+
+  .week-day { background:white; border-radius:12px; margin-bottom:12px; overflow:hidden; box-shadow:var(--shadow); }
+  .week-day-header { background:var(--teal); color:white; padding:10px 16px; font-size:0.85rem; font-weight:700; display:flex; justify-content:space-between; }
+  .week-task { padding:10px 16px; border-bottom:1px solid var(--cream); display:flex; align-items:center; gap:10px; font-size:0.85rem; }
+  .week-task:last-child { border-bottom:none; }
+
+  .meal-day { background:white; border-radius:12px; margin-bottom:12px; box-shadow:var(--shadow); overflow:hidden; }
+  .meal-day-header { background:var(--teal-light); color:var(--teal-dark); padding:10px 16px; font-weight:700; font-size:0.85rem; }
+  .meal-row { display:flex; padding:10px 16px; border-bottom:1px solid var(--cream); align-items:center; gap:10px; }
+  .meal-row:last-child { border-bottom:none; }
+  .meal-time { font-size:0.72rem; color:var(--teal); font-weight:700; min-width:55px; }
+  .meal-name { font-size:0.85rem; flex:1; }
+
+  .notes-area { background:white; border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); min-height:200px; font-family:'Tajawal',sans-serif; font-size:0.9rem; line-height:1.8; border:none; width:100%; resize:none; outline:none; color:var(--text); }
+
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:white; display:flex; border-top:1px solid var(--cream-dark); box-shadow:0 -4px 20px rgba(0,0,0,0.08); z-index:100; }
+  .bnav-item { flex:1; padding:10px 4px 12px; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; border:none; background:transparent; }
+  .bnav-icon { font-size:1.3rem; }
+  .bnav-label { font-family:'Tajawal',sans-serif; font-size:0.65rem; color:var(--text-light); }
+  .bnav-item.active .bnav-label { color:var(--teal); font-weight:700; }
+
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:200; align-items:flex-end; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:white; border-radius:20px 20px 0 0; padding:24px 20px 40px; width:100%; max-width:480px; }
+  .modal h3 { font-size:1rem; font-weight:700; margin-bottom:16px; }
+  .modal input, .modal select { width:100%; padding:12px 14px; border:1.5px solid var(--cream-dark); border-radius:10px; font-family:'Tajawal',sans-serif; font-size:0.9rem; margin-bottom:10px; outline:none; }
+  .modal input:focus { border-color:var(--teal); }
+  .modal-btns { display:flex; gap:10px; margin-top:6px; }
+  .btn-primary { flex:1; padding:12px; background:var(--teal); color:white; border:none; border-radius:10px; font-family:'Tajawal',sans-serif; font-size:0.9rem; font-weight:700; cursor:pointer; }
+  .btn-cancel { flex:1; padding:12px; background:var(--cream-dark); color:var(--text); border:none; border-radius:10px; font-family:'Tajawal',sans-serif; font-size:0.9rem; cursor:pointer; }
+
+  .saving-actions { display:flex; gap:6px; margin-top:8px; align-items:center; justify-content:space-between; }
+  .tag { font-size:0.7rem; color:var(--teal); background:var(--teal-light); padding:2px 8px; border-radius:99px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-arrows">
+    <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+    <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+  </div>
+  <span class="nav-month" id="navMonth"></span>
+  <h1>📅 مخططي</h1>
+</nav>
+
+<!-- OVERVIEW -->
+<div class="section active" id="sec-overview">
+  <div class="month-header">
+    <h2 id="headerMonth"></h2>
+    <p id="headerYear"></p>
+  </div>
+  <div class="cards-grid">
+    <div class="card" onclick="showSection('weekly')"><div class="card-icon">📋</div><div class="card-title">المخطط الأسبوعي</div><div class="card-sub">المهام والجدول</div></div>
+    <div class="card" onclick="showSection('meal')"><div class="card-icon">🍽️</div><div class="card-title">مخطط الوجبات</div><div class="card-sub">قائمة الطعام</div></div>
+    <div class="card" onclick="showSection('cleaning')"><div class="card-icon">🧹</div><div class="card-title">التنظيف</div><div class="card-sub">جدول يومي وأسبوعي</div></div>
+    <div class="card" onclick="showSection('habits')"><div class="card-icon">🌿</div><div class="card-title">العادات والعناية</div><div class="card-sub">تتبع يومي</div></div>
+    <div class="card" onclick="showSection('budget')"><div class="card-icon">💰</div><div class="card-title">تتبع الميزانية</div><div class="card-sub">الدخل والمصروف</div></div>
+    <div class="card" onclick="showSection('savings')"><div class="card-icon">🏦</div><div class="card-title">تتبع التوفير</div><div class="card-sub">أهداف الادخار</div></div>
+    <div class="card" onclick="showSection('debt')"><div class="card-icon">📉</div><div class="card-title">سداد الديون</div><div class="card-sub">تتبع وتخطيط</div></div>
+    <div class="card" onclick="showSection('notes')"><div class="card-icon">📝</div><div class="card-title">الملاحظات</div><div class="card-sub">أفكار وتفريغ ذهني</div></div>
+  </div>
+</div>
+
+<!-- CALENDAR -->
+<div class="section" id="sec-calendar">
+  <div class="calendar-grid">
+    <div class="cal-header"><span>أح</span><span>إث</span><span>ثل</span><span>أر</span><span>خم</span><span>جم</span><span>سب</span></div>
+    <div class="cal-days" id="calDays"></div>
+  </div>
+  <div class="section-label">المواعيد والأهداف الشهرية</div>
+  <div id="goalsList"></div>
+  <button class="add-btn" onclick="openModal('goal')">+ إضافة هدف أو موعد</button>
+</div>
+
+<!-- WEEKLY -->
+<div class="section" id="sec-weekly">
+  <div class="section-label">المخطط الأسبوعي</div>
+  <div id="weeklyContent"></div>
+  <button class="add-btn" onclick="openModal('task')">+ إضافة مهمة</button>
+</div>
+
+<!-- MEAL -->
+<div class="section" id="sec-meal">
+  <div class="section-label">خطة الوجبات الأسبوعية</div>
+  <div id="mealContent"></div>
+</div>
+
+<!-- HABITS -->
+<div class="section" id="sec-habits">
+  <div class="section-label">تتبع العادات اليومية</div>
+  <div id="habitsContent"></div>
+  <button class="add-btn" onclick="openModal('habit')">+ إضافة عادة</button>
+</div>
+
+<!-- BUDGET -->
+<div class="section" id="sec-budget">
+  <div class="section-label">الميزانية الشهرية</div>
+  <div class="budget-bar-wrap">
+    <div class="budget-labels"><span>إجمالي المصروف</span><span class="amount" id="budgetUsed"></span></div>
+    <div class="bar-bg"><div class="bar-fill" id="budgetBar"></div></div>
+    <div class="budget-labels" style="margin-top:8px">
+      <span style="font-size:0.72rem;color:var(--text-light)">الميزانية الكلية</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="edit-btn" onclick="openModal('editBudget')">✏️ تعديل</button>
+        <span style="font-size:0.8rem;font-weight:700" id="budgetTotal"></span>
+      </div>
+    </div>
+  </div>
+  <div class="section-label">المصروفات</div>
+  <div id="expensesList"></div>
+  <button class="add-btn" onclick="openModal('expense')">+ إضافة مصروف</button>
+</div>
+
+<!-- SAVINGS -->
+<div class="section" id="sec-savings">
+  <div class="section-label">أهداف التوفير</div>
+  <div id="savingsContent"></div>
+  <button class="add-btn" onclick="openModal('saving')">+ إضافة هدف توفير</button>
+</div>
+
+<!-- DEBT -->
+<div class="section" id="sec-debt">
+  <div class="section-label">سداد الديون</div>
+  <div id="debtContent"></div>
+  <button class="add-btn" onclick="openModal('debt')">+ إضافة دين</button>
+</div>
+
+<!-- CLEANING -->
+<div class="section" id="sec-cleaning">
+  <div class="section-label">قائمة التنظيف</div>
+  <div id="cleaningContent"></div>
+  <button class="add-btn" onclick="openModal('cleaning')">+ إضافة مهمة تنظيف</button>
+</div>
+
+<!-- NOTES -->
+<div class="section" id="sec-notes">
+  <div class="section-label">ملاحظاتي الشهرية</div>
+  <textarea class="notes-area" id="notesArea" placeholder="اكتب أفكارك وملاحظاتك هنا..." rows="12" oninput="saveNotes()"></textarea>
+  <div style="margin-top:12px">
+    <div class="section-label">تفريغ ذهني</div>
+    <textarea class="notes-area" id="brainDump" placeholder="فرّغ كل ما يدور في ذهنك..." rows="8" oninput="saveBrain()" style="margin-top:8px"></textarea>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="bnav-item active" onclick="showSection('overview')" id="bnav-overview"><span class="bnav-icon">🏠</span><span class="bnav-label">الرئيسية</span></button>
+  <button class="bnav-item" onclick="showSection('calendar')" id="bnav-calendar"><span class="bnav-icon">📅</span><span class="bnav-label">التقويم</span></button>
+  <button class="bnav-item" onclick="showSection('budget')" id="bnav-budget"><span class="bnav-icon">💰</span><span class="bnav-label">الميزانية</span></button>
+  <button class="bnav-item" onclick="showSection('habits')" id="bnav-habits"><span class="bnav-icon">🌿</span><span class="bnav-label">العادات</span></button>
+  <button class="bnav-item" onclick="showSection('notes')" id="bnav-notes"><span class="bnav-icon">📝</span><span class="bnav-label">ملاحظات</span></button>
+</div>
+
+<!-- CONFIRM DELETE MODAL -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal" style="text-align:center">
+    <div style="font-size:2rem;margin-bottom:8px">🗑️</div>
+    <h3 style="margin-bottom:8px">تأكيد الحذف</h3>
+    <p style="font-size:0.88rem;color:var(--text-light);margin-bottom:20px">هل أنت متأكد أنك تريد حذف هذا العنصر؟</p>
+    <div class="modal-btns">
+      <button class="btn-primary" style="background:var(--red)" onclick="confirmDelete()">نعم، احذف</button>
+      <button class="btn-cancel" onclick="cancelDelete()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOverlay(event)">
+  <div class="modal">
+    <h3 id="modalTitle">إضافة</h3>
+    <input type="text" id="modalInput1" placeholder="الاسم">
+    <input type="text" id="modalInput2" placeholder="التفاصيل" style="display:none">
+    <input type="number" id="modalInput3" placeholder="المبلغ" style="display:none">
+    <select id="modalSelect1" style="display:none">
+      <option value="السبت">السبت</option><option value="الأحد">الأحد</option>
+      <option value="الاثنين">الاثنين</option><option value="الثلاثاء">الثلاثاء</option>
+      <option value="الأربعاء">الأربعاء</option><option value="الخميس">الخميس</option>
+      <option value="الجمعة">الجمعة</option>
+    </select>
+    <div class="modal-btns">
+      <button class="btn-primary" onclick="saveModal()">حفظ</button>
+      <button class="btn-cancel" onclick="document.getElementById('modalOverlay').classList.remove('open')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentDate = new Date();
+let currentSection = 'overview';
+let modalType = '';
+let editIndex = -1;
+
+let state = JSON.parse(localStorage.getItem('plannerState2') || 'null') || {
+  goals: ['الوصول للوزن المثالي','قراءة كتابين','توفير 500 ريال'],
+  checkedGoals: [],
+  tasks: {
+    'السبت':['التسوق الأسبوعي','تنظيف المنزل'],
+    'الأحد':['اجتماع العمل ١٠ص','رياضة ٦م'],
+    'الاثنين':['دفع الفواتير'],
+    'الثلاثاء':['زيارة العائلة'],
+    'الأربعاء':[],
+    'الخميس':['مراجعة الميزانية'],
+    'الجمعة':['يوم الراحة']
+  },
+  habits:[
+    {name:'شرب الماء 8 أكواب',done:[]},
+    {name:'رياضة ٣٠ دقيقة',done:[]},
+    {name:'قراءة',done:[]},
+    {name:'النوم مبكراً',done:[]}
+  ],
+  expenses:[
+    {name:'إيجار',cat:'سكن',amount:2500},
+    {name:'بقالة',cat:'طعام',amount:800},
+    {name:'وقود',cat:'مواصلات',amount:300}
+  ],
+  budget:5000,
+  savings:[
+    {name:'صندوق الطوارئ',target:10000,current:3500},
+    {name:'رحلة صيف',target:5000,current:1200}
+  ],
+  debts:[
+    {name:'قرض السيارة',total:20000,remaining:14000},
+    {name:'بطاقة ائتمان',total:3000,remaining:1800}
+  ],
+  cleaning:[
+    {task:'غسيل الملابس',freq:'يومي',done:false},
+    {task:'كنس الأرضيات',freq:'يومي',done:false},
+    {task:'تنظيف الحمام',freq:'أسبوعي',done:false},
+    {task:'تنظيف المطبخ',freq:'يومي',done:false},
+    {task:'تغيير الشراشف',freq:'أسبوعي',done:false}
+  ],
+  meals:{
+    'السبت':{breakfast:'فول وفلافل',lunch:'كبسة دجاج',dinner:'شوربة'},
+    'الأحد':{breakfast:'بيض وخبز',lunch:'مكرونة بشاميل',dinner:'سلطة'},
+    'الاثنين':{breakfast:'لبن وتمر',lunch:'أرز بالخضار',dinner:'شاورما'},
+    'الثلاثاء':{breakfast:'عصير وتوست',lunch:'مندي',dinner:'شوربة عدس'},
+    'الأربعاء':{breakfast:'جبن وزيتون',lunch:'فتة دجاج',dinner:'بيض مقلي'},
+    'الخميس':{breakfast:'فطائر',lunch:'كبسة لحم',dinner:'حمص ومشاوي'},
+    'الجمعة':{breakfast:'فول وزيت',lunch:'هندي أو برجر',dinner:'بيتزا'}
+  },
+  notes:'',brain:''
+};
+
+function save() { localStorage.setItem('plannerState2', JSON.stringify(state)); }
+
+const monthsAr = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+function updateMonthDisplay() {
+  const mn = monthsAr[currentDate.getMonth()];
+  const yr = currentDate.getFullYear();
+  document.getElementById('navMonth').textContent = mn + ' ' + yr;
+  document.getElementById('headerMonth').textContent = mn;
+  document.getElementById('headerYear').textContent = yr;
+}
+
+function changeMonth(d) {
+  currentDate.setMonth(currentDate.getMonth() + d);
+  updateMonthDisplay();
+  if (currentSection === 'calendar') renderCalendar();
+}
+
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
+  const nb = document.getElementById('bnav-' + name);
+  if (nb) nb.classList.add('active');
+  currentSection = name;
+  if (name==='calendar') renderCalendar();
+  if (name==='habits') renderHabits();
+  if (name==='budget') renderBudget();
+  if (name==='weekly') renderWeekly();
+  if (name==='meal') renderMeals();
+  if (name==='savings') renderSavings();
+  if (name==='debt') renderDebt();
+  if (name==='cleaning') renderCleaning();
+  if (name==='notes') { document.getElementById('notesArea').value=state.notes; document.getElementById('brainDump').value=state.brain; }
+}
+
+// ===== CALENDAR =====
+function renderCalendar() {
+  const y=currentDate.getFullYear(), m=currentDate.getMonth();
+  const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+  const today=new Date();
+  const c=document.getElementById('calDays');
+  c.innerHTML='';
+  for(let i=0;i<first;i++) c.innerHTML+=`<div class="cal-day empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const isToday=(d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear());
+    c.innerHTML+=`<div class="cal-day ${isToday?'today':''}">${d}</div>`;
+  }
+  document.getElementById('goalsList').innerHTML = state.goals.map((g,i)=>`
+    <div class="goal-item">
+      <div class="goal-check ${state.checkedGoals.includes(i)?'checked':''}" onclick="toggleGoal(${i})">${state.checkedGoals.includes(i)?'✓':''}</div>
+      <div class="goal-text ${state.checkedGoals.includes(i)?'done':''}" style="flex:1">${g}</div>
+      <button class="edit-btn" onclick="openEditModal('goal',${i})">✏️</button>
+      <button class="del-btn" onclick="deleteItem('goal',${i})">🗑️</button>
+    </div>
+  `).join('');
+}
+
+function toggleGoal(i){ const idx=state.checkedGoals.indexOf(i); if(idx>-1)state.checkedGoals.splice(idx,1); else state.checkedGoals.push(i); save();renderCalendar(); }
+
+// نافذة تأكيد الحذف المخصصة
+let pendingDelete = null;
+function deleteItem(type, i){
+  pendingDelete = ()=>{
+    if(type==='goal'){state.goals.splice(i,1);state.checkedGoals=state.checkedGoals.filter(x=>x!==i).map(x=>x>i?x-1:x);save();renderCalendar();}
+    else if(type==='expense'){state.expenses.splice(i,1);save();renderBudget();}
+    else if(type==='saving'){state.savings.splice(i,1);save();renderSavings();}
+    else if(type==='debt'){state.debts.splice(i,1);save();renderDebt();}
+    else if(type==='habit'){state.habits.splice(i,1);save();renderHabits();}
+    else if(type==='cleaning'){state.cleaning.splice(i,1);save();renderCleaning();}
+  };
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function deleteTask(day, i){
+  pendingDelete = ()=>{ state.tasks[day].splice(i,1);save();renderWeekly(); };
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function confirmDelete(){
+  document.getElementById('confirmOverlay').classList.remove('open');
+  if(pendingDelete){ pendingDelete(); pendingDelete=null; }
+}
+function cancelDelete(){
+  document.getElementById('confirmOverlay').classList.remove('open');
+  pendingDelete=null;
+}
+
+// ===== WEEKLY =====
+function renderWeekly(){
+  const days=['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'];
+  document.getElementById('weeklyContent').innerHTML = days.map(d=>`
+    <div class="week-day">
+      <div class="week-day-header">${d} <span>${state.tasks[d].length} مهام</span></div>
+      ${state.tasks[d].map((t,i)=>`
+        <div class="week-task">
+          <span style="color:var(--teal)">◆</span>
+          <span style="flex:1">${t}</span>
+          <button class="edit-btn" onclick="openEditModal('task','${d}',${i})">✏️</button>
+          <button class="del-btn" onclick="deleteTask('${d}',${i})">🗑️</button>
+        </div>
+      `).join('') || '<div class="week-task" style="color:var(--text-light)">لا توجد مهام</div>'}
+    </div>
+  `).join('');
+}
+
+// ===== MEALS =====
+function renderMeals(){
+  const days=['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'];
+  document.getElementById('mealContent').innerHTML = days.map(d=>`
+    <div class="meal-day">
+      <div class="meal-day-header">${d}</div>
+      <div class="meal-row"><span class="meal-time">🌅 صباح</span><span class="meal-name" style="flex:1">${state.meals[d].breakfast}</span><button class="edit-btn" onclick="openEditModal('meal','${d}','breakfast')">✏️</button></div>
+      <div class="meal-row"><span class="meal-time">☀️ غداء</span><span class="meal-name" style="flex:1">${state.meals[d].lunch}</span><button class="edit-btn" onclick="openEditModal('meal','${d}','lunch')">✏️</button></div>
+      <div class="meal-row"><span class="meal-time">🌙 عشاء</span><span class="meal-name" style="flex:1">${state.meals[d].dinner}</span><button class="edit-btn" onclick="openEditModal('meal','${d}','dinner')">✏️</button></div>
+    </div>
+  `).join('');
+}
+
+// ===== HABITS =====
+function renderHabits(){
+  const daysInMonth=new Date(currentDate.getFullYear(),currentDate.getMonth()+1,0).getDate();
+  document.getElementById('habitsContent').innerHTML = state.habits.map((h,hi)=>`
+    <div class="habit-row">
+      <div class="habit-header">
+        <span class="habit-name">${h.name}</span>
+        <div style="display:flex;gap:6px">
+          <button class="edit-btn" onclick="openEditModal('habit',${hi})">✏️</button>
+          <button class="del-btn" onclick="deleteItem('habit',${hi})">🗑️</button>
+        </div>
+      </div>
+      <div class="habit-dots">
+        ${Array.from({length:daysInMonth},(_,i)=>`<div class="dot ${h.done.includes(i+1)?'filled':''}" onclick="toggleHabit(${hi},${i+1})">${i+1}</div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+function toggleHabit(hi,day){const idx=state.habits[hi].done.indexOf(day);if(idx>-1)state.habits[hi].done.splice(idx,1);else state.habits[hi].done.push(day);save();renderHabits();}
+
+// ===== BUDGET =====
+function renderBudget(){
+  const spent=state.expenses.reduce((s,e)=>s+e.amount,0);
+  const pct=Math.min((spent/state.budget)*100,100);
+  document.getElementById('budgetUsed').textContent=spent.toLocaleString('ar')+' ر.س';
+  document.getElementById('budgetTotal').textContent=state.budget.toLocaleString('ar')+' ر.س';
+  document.getElementById('budgetBar').style.width=pct+'%';
+  document.getElementById('expensesList').innerHTML=state.expenses.map((e,i)=>`
+    <div class="expense-item">
+      <div style="flex:1"><div class="expense-name">${e.name}</div><div class="expense-cat">${e.cat}</div></div>
+      <div class="expense-amt">${e.amount.toLocaleString('ar')} ر.س</div>
+      <button class="edit-btn" onclick="openEditModal('expense',${i})">✏️</button>
+      <button class="del-btn" onclick="deleteItem('expense',${i})">🗑️</button>
+    </div>
+  `).join('');
+}
+
+// ===== SAVINGS =====
+function renderSavings(){
+  document.getElementById('savingsContent').innerHTML=state.savings.map((s,i)=>`
+    <div class="budget-bar-wrap">
+      <div class="budget-labels"><span style="font-weight:700">${s.name}</span><span class="amount">${s.current.toLocaleString('ar')} / ${s.target.toLocaleString('ar')} ر.س</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${Math.min((s.current/s.target)*100,100)}%"></div></div>
+      <div class="saving-actions">
+        <div style="display:flex;gap:6px">
+          <button class="edit-btn" onclick="openEditModal('saving',${i})">✏️ تعديل المبلغ</button>
+          <button class="del-btn" onclick="deleteItem('saving',${i})">🗑️ حذف</button>
+        </div>
+        <span style="font-size:0.72rem;color:var(--text-light)">${Math.round((s.current/s.target)*100)}% مكتمل</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== DEBT =====
+function renderDebt(){
+  document.getElementById('debtContent').innerHTML=state.debts.map((d,i)=>`
+    <div class="budget-bar-wrap">
+      <div class="budget-labels"><span style="font-weight:700">${d.name}</span><span class="amount" style="color:#c0392b">${d.remaining.toLocaleString('ar')} ر.س متبقي</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(((d.total-d.remaining)/d.total)*100,100)}%;background:linear-gradient(90deg,#e74c3c,#c0392b)"></div></div>
+      <div class="saving-actions">
+        <div style="display:flex;gap:6px">
+          <button class="edit-btn" onclick="openEditModal('debt',${i})">✏️ تعديل المتبقي</button>
+          <button class="del-btn" onclick="deleteItem('debt',${i})">🗑️ حذف</button>
+        </div>
+        <span style="font-size:0.72rem;color:var(--text-light)">${Math.round(((d.total-d.remaining)/d.total)*100)}% مسدد</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== CLEANING =====
+function renderCleaning(){
+  document.getElementById('cleaningContent').innerHTML=state.cleaning.map((c,i)=>`
+    <div class="goal-item">
+      <div class="goal-check ${c.done?'checked':''}" onclick="toggleClean(${i})">${c.done?'✓':''}</div>
+      <div class="goal-text ${c.done?'done':''}" style="flex:1">${c.task}</div>
+      <span class="tag">${c.freq}</span>
+      <button class="del-btn" onclick="deleteItem('cleaning',${i})">🗑️</button>
+    </div>
+  `).join('');
+}
+function toggleClean(i){state.cleaning[i].done=!state.cleaning[i].done;save();renderCleaning();}
+
+function saveNotes(){state.notes=document.getElementById('notesArea').value;save();}
+function saveBrain(){state.brain=document.getElementById('brainDump').value;save();}
+
+// ===== MODAL =====
+function openEditModal(type, a, b){
+  editIndex = a;
+  if(type==='goal'){
+    modalType='edit_goal';
+    setModal('✏️ تعديل الهدف', state.goals[a], false, false, false, false);
+  } else if(type==='task'){
+    modalType='edit_task_'+a; editIndex=b;
+    setModal('✏️ تعديل المهمة', state.tasks[a][b], false, false, false, false);
+  } else if(type==='habit'){
+    modalType='edit_habit';
+    setModal('✏️ تعديل العادة', state.habits[a].name, false, false, false, false);
+  } else if(type==='expense'){
+    modalType='edit_expense';
+    const e=state.expenses[a];
+    setModal('✏️ تعديل المصروف', e.name, e.cat, e.amount, false, false);
+  } else if(type==='saving'){
+    modalType='edit_saving';
+    setModal('✏️ تعديل المبلغ الموفّر', state.savings[a].current, false, false, false, false);
+  } else if(type==='debt'){
+    modalType='edit_debt';
+    setModal('✏️ تعديل المبلغ المتبقي', state.debts[a].remaining, false, false, false, false);
+  } else if(type==='meal'){
+    modalType='edit_meal_'+a+'_'+b; editIndex=-1;
+    const mealNames={'breakfast':'الإفطار','lunch':'الغداء','dinner':'العشاء'};
+    setModal('✏️ تعديل '+mealNames[b]+' - '+a, state.meals[a][b], false, false, false, false);
+  }
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function openModal(type){
+  modalType=type; editIndex=-1;
+  if(type==='goal') setModal('إضافة هدف أو موعد','','',false,false,false);
+  else if(type==='task') setModal('إضافة مهمة','','',false,false,true);
+  else if(type==='habit') setModal('إضافة عادة','','',false,false,false);
+  else if(type==='expense') setModal('إضافة مصروف','','اسم التصنيف',0,false,false);
+  else if(type==='saving') setModal('إضافة هدف توفير','','',0,false,false);
+  else if(type==='debt') setModal('إضافة دين','','',0,false,false);
+  else if(type==='cleaning') setModal('إضافة مهمة تنظيف','','يومي / أسبوعي / شهري',false,false,false);
+  else if(type==='editBudget') setModal('✏️ تعديل الميزانية الكلية',state.budget,false,false,false,false);
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function setModal(title, v1, v2, v3, v4, showSelect){
+  document.getElementById('modalTitle').textContent=title;
+  const i1=document.getElementById('modalInput1');
+  const i2=document.getElementById('modalInput2');
+  const i3=document.getElementById('modalInput3');
+  const s1=document.getElementById('modalSelect1');
+  i1.value=v1!==false?v1:''; i1.style.display='block';
+  i2.value=v2!==false?v2:''; i2.style.display=v2!==false?'block':'none';
+  i3.value=v3!==false?v3:''; i3.style.display=v3!==false?'block':'none';
+  s1.style.display=showSelect?'block':'none';
+}
+
+function closeModalOverlay(e){ if(e.target===document.getElementById('modalOverlay')) document.getElementById('modalOverlay').classList.remove('open'); }
+
+function saveModal(){
+  const v1=document.getElementById('modalInput1').value.toString().trim();
+  const v2=document.getElementById('modalInput2').value.trim();
+  const v3=parseFloat(document.getElementById('modalInput3').value)||0;
+  const vDay=document.getElementById('modalSelect1').value;
+  if(!v1) return;
+
+  if(modalType==='edit_goal'){ state.goals[editIndex]=v1; save();renderCalendar(); }
+  else if(modalType.startsWith('edit_task_')){ const day=modalType.replace('edit_task_',''); state.tasks[day][editIndex]=v1; save();renderWeekly(); }
+  else if(modalType==='edit_habit'){ state.habits[editIndex].name=v1; save();renderHabits(); }
+  else if(modalType==='edit_expense'){ state.expenses[editIndex]={name:v1,cat:v2||state.expenses[editIndex].cat,amount:parseFloat(document.getElementById('modalInput3').value)||state.expenses[editIndex].amount}; save();renderBudget(); }
+  else if(modalType==='edit_saving'){ state.savings[editIndex].current=Math.min(parseFloat(v1)||0,state.savings[editIndex].target); save();renderSavings(); }
+  else if(modalType==='edit_debt'){ state.debts[editIndex].remaining=Math.max(0,Math.min(parseFloat(v1)||0,state.debts[editIndex].total)); save();renderDebt(); }
+  else if(modalType.startsWith('edit_meal_')){ const parts=modalType.split('_'); const day=parts[2]; const mealType=parts[3]; state.meals[day][mealType]=v1; save();renderMeals(); }
+  else if(modalType==='goal'){ state.goals.push(v1); save();renderCalendar(); }
+  else if(modalType==='task'){ state.tasks[vDay].push(v1); save();renderWeekly(); }
+  else if(modalType==='habit'){ state.habits.push({name:v1,done:[]}); save();renderHabits(); }
+  else if(modalType==='expense'){ state.expenses.push({name:v1,cat:v2||'أخرى',amount:v3}); save();renderBudget(); }
+  else if(modalType==='saving'){ state.savings.push({name:v1,target:v3,current:0}); save();renderSavings(); }
+  else if(modalType==='debt'){ state.debts.push({name:v1,total:v3,remaining:v3}); save();renderDebt(); }
+  else if(modalType==='cleaning'){ state.cleaning.push({task:v1,freq:v2||'يومي',done:false}); save();renderCleaning(); }
+  else if(modalType==='editBudget'){ state.budget=parseFloat(v1)||state.budget; save();renderBudget(); }
+
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+updateMonthDisplay();
+renderCalendar();
+</script>
+</body>
+</html>
